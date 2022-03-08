@@ -1,0 +1,16 @@
+[Unit]
+Description=SmartEntry qUPS guard service.
+After=network.target getty.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/pi/qups-guard.py 100
+Restart=on-failure
+TimeoutSec=3
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
