@@ -15,7 +15,7 @@ Our solution is simple in design with high flexibility - voltage levels and GPIO
 
 ### 3.1 RaspiOS on Raspberry PI binary
 
-If you are using RaspiOS, you can clone the repository and start the compiled binaries or execute python3 interpreter.
+If you are using RaspiOS, you can clone the repository and start the compiled binaries or execute python3 interpreter. The binaries and the source codes for the c++ version cover two different approaches: qups-guard is a 1 sec polling evaluation for the GPIO, qups-guard_f is an asynchronous event driven version.
 
 ### 3.2 RaspiOS on Raspberry PI compile from source
 
