@@ -21,7 +21,7 @@ If you are using RaspiOS, you can clone the repository and start the compiled bi
 
 Libraries needed:
 ```
-lgpiod-dev
+libgpiod-dev
 ```
 
 You can compile the source files with following options and libraries:
