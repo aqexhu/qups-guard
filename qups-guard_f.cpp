@@ -33,7 +33,6 @@ struct DIPsw
 struct DIPsw DIPswa[7] = {
     {"001", 17, 22, 27}, {"010", 12, 20, 16}, {"011", 14, 18, 15}, {"100", 19, 21, 26}, {"101", 25, 7, 8}, {"110", 10, 11, 9}, {"111", 4, 24, 23}};
 
-
 void *g_callback(void *args)
 {
     struct gpiod_line_bulk bulk[2], events[2];
@@ -62,13 +61,20 @@ void *g_callback(void *args)
                     if (ev_g.event_type == GPIOD_LINE_EVENT_FALLING_EDGE)
                     {
                         // Power NOK
-                        syslog(LOG_INFO, "UPS line power NOK!");
+                        if (lastval_pfo != gpiod_line_get_value(linePfo))
+                        {
+                            syslog(LOG_INFO, "UPS line power NOK!");
+                        }
                     }
                     else if (ev_g.event_type == GPIOD_LINE_EVENT_RISING_EDGE)
                     {
                         // Power OK
-                        syslog(LOG_INFO, "UPS line power OK.");
+                        if (lastval_pfo != gpiod_line_get_value(linePfo))
+                        {
+                            syslog(LOG_INFO, "UPS line power OK.");
+                        }
                     }
+                    lastval_pfo = gpiod_line_get_value(linePfo);
                 }
                 else if (line == lineLim)
                 {
@@ -87,7 +93,9 @@ void *g_callback(void *args)
                         // Energy limit OK
                         syslog(LOG_INFO, "UPS energy level HIGH.");
                     }
+                    lastval_lim = gpiod_line_get_value(lineLim);
                 }
+                fflush(stdout);
                 usleep(500000);
             }
         }
@@ -118,6 +126,7 @@ int g_gpioinit()
     ts.tv_sec = 10;
     ts.tv_nsec = 0;
 
+    lastval_pfo = gpiod_line_get_value(linePfo);
     int retv = gpiod_line_request_both_edges_events_flags(linePfo, CONSUMER, GPIOD_LINE_REQUEST_FLAG_BIAS_DISABLE);
     if (retv == -1)
     {
