@@ -3,7 +3,7 @@
 ![qups_trans_v1](https://github.com/aqexhu/qups-guard/blob/main/images/qups_trans_smaller_v1.png)
 ![qups_trans_v2](https://github.com/aqexhu/qups-guard/blob/main/images/qups_trans2_smaller_v1.png)
 
-![last_commit](https://badgen.net/badge/:subject/:status/:color?icon=github)
+![last_commit](https://badgen.net/badge/github/commits/micromatch/micromatch)
 
 ## 1. Greeting / purpose
 
