@@ -3,7 +3,7 @@
 ![qups_trans_v1](https://github.com/aqexhu/qups-guard/blob/main/images/qups_trans_smaller_v1.png)
 ![qups_trans_v2](https://github.com/aqexhu/qups-guard/blob/main/images/qups_trans2_smaller_v1.png)
 
-![example workflow](https://github.com/github/docs/actions/workflows/main.yml/badge.svg)
+![example workflow](https://badgen.net/badge/:subject/:status/:color?icon=github)
 
 ## 1. Greeting / purpose
 
