@@ -5,6 +5,7 @@
 
 ![license](https://img.shields.io/github/license/aqexhu/qups-guard)
 ![last_commit](https://img.shields.io/github/last-commit/aqexhu/qups-guard)
+![opsys](https://img.shields.io/github/checks/node-formidable/node-formidable/master/ubuntu?label=linux)
 
 ## 1. Greeting / purpose
 
