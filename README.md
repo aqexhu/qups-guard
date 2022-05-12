@@ -44,7 +44,7 @@ or
 The manually or automatically started qups-guard will keep track of energy level and power supply. 
 Manual start from command line (assumed repo cloned to pi home dir and DIP is set to 100):
 ```
-/home/pi/qups-guard/qups-guard 100
+/home/pi/qups-guard/qups-guard_f 100
 ```
 If power fails, syslog will be updated with the ```Power NOK!``` information. If power keeps failing and the supercapacitor voltage level drops below high voltage limit, the LED changes from **green** to **amber**. After depleting below low voltage limit, **red** LED also starts up and syslog is updated with ```UPS level LOW - initiating shutdown seqence.```
 On power resume, the capacitor gets filled above high voltage limit and the computer gets powered up by the qups.
