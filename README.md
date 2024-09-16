@@ -1,7 +1,7 @@
 # AQEX qUPS smart supercapacitor uninterruptible power supply 
 ## Software guard for safe shutdown of the Raspberry PI
-![qups_trans_v1](https://github.com/aqexhu/qups-guard/blob/main/images/qups_trans_smaller_v1.png)
-![qups_trans_v2](https://github.com/aqexhu/qups-guard/blob/main/images/qups_trans2_smaller_v1.png)
+![qups_trans_v1](https://github.com/aqexhu/qups-guard/blob/main/images/qUPS_products.webp)
+
 
 ![license](https://img.shields.io/github/license/aqexhu/qups-guard)
 ![last_commit](https://img.shields.io/github/last-commit/aqexhu/qups-guard)
