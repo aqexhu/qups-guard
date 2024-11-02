@@ -34,7 +34,10 @@ struct DIPsw
 // pin_shd = {'10': 22, '01': 25, '11': 26}
 
 
-struct DIPsw DIPswa[7];
+struct DIPsw DIPswa[10] = {
+{"10", 17, 27, 22}, {"01", 23, 24, 25}, {"11", 5, 6, 26},
+{"111", 7, 18, 16}, {"011", 8, 12, 10}, {"101", 22, 26, 24}, {"001", 11, 15, 13}, {"110", 19, 23, 21}, {"010", 32, 38, 36}, {"100", 35, 40, 37}
+};
 
 
 void SM()
@@ -92,15 +95,12 @@ int g_gpioinit()
     {
 		chipname = "gpiochip4";
 		chip = gpiod_chip_open_by_name(chipname);
-		if (!chip) {
+		if (!chip) 
+		{
 			syslog(LOG_ERR, "Open chip failed\n");
 			exit(0);
-        } else {
-			DIPswa [7] = { {"10", 17, 27, 22}, {"01", 23, 24, 25}, {"11", 5, 6, 26} }; 
 		}
-    } else {
-		DIPswa [7] = { {"001", 17, 22, 27}, {"010", 12, 20, 16}, {"011", 14, 18, 15}, {"100", 19, 21, 26}, {"101", 25, 7, 8}, {"110", 10, 11, 9}, {"111", 4, 24, 23} }; 
-	}
+    }
     syslog(LOG_INFO, "Chip name: %s - label: %s - %d lines\n", gpiod_chip_name(chip), gpiod_chip_label(chip), gpiod_chip_num_lines(chip));
     linePfo = gpiod_chip_get_line(chip, DIP_sw.pfo_n);
     lineLim = gpiod_chip_get_line(chip, DIP_sw.lim_n);
@@ -130,14 +130,15 @@ int main(int argc, char **argv)
     {
         syslog(LOG_INFO, "Input argument: %s", argv[1]);
         bool mat = false;
-        for (u_int8_t i = 0; i < 7; i++)
+        for (u_int8_t i = 0; i < 10; i++)
         {
             if (!strcmp(argv[1], DIPswa[i].DIP))
             {
-                DIP_sw.DIP = DIPswa[i].DIP;
-                DIP_sw.pfo_n = DIPswa[i].pfo_n;
-                DIP_sw.lim_n = DIPswa[i].lim_n;
-                DIP_sw.shd_n = DIPswa[i].shd_n;
+		DIP_sw=DIPswa[i];
+//                DIP_sw.DIP = DIPswa[i].DIP;
+  //              DIP_sw.pfo_n = DIPswa[i].pfo_n;
+    //            DIP_sw.lim_n = DIPswa[i].lim_n;
+      //          DIP_sw.shd_n = DIPswa[i].shd_n;
                 mat = true;
             }
         }
