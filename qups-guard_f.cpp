@@ -18,6 +18,8 @@ struct gpiod_line *lineShd;
 struct timespec ts;
 
 #define CONSUMER "qUPS-guard"
+#define POLLINTERVAL 500000
+
 struct DIPsw
 {
     const char *DIP;
@@ -26,12 +28,20 @@ struct DIPsw
     uint shd_n;
 } DIP_sw;
 
+// qUPS-P-SC-1.1
 // pin_pfo = {'111': 7, '011': 8, '101': 22, '001': 11 , '110': 19, '010': 32, '100': 35}
 // pin_lim = {'111': 18, '011': 12, '101': 26, '001': 15 , '110': 23, '010': 38, '100': 40}
 // pin_shd = {'111': 16, '011': 10, '101': 24, '001': 13 , '110': 21, '010': 36, '100': 37}
+//
+// qUPS-P-BC-1.2 and qUPS-P-BC-1.3
+// pin_pfo = {'10': 17, '01': 23, '11': 5}
+// pin_lim = {'10': 27, '01': 24, '11': 6}
+// pin_shd = {'10': 22, '01': 25, '11': 26}
 
-struct DIPsw DIPswa[7] = {
-    {"001", 17, 22, 27}, {"010", 12, 20, 16}, {"011", 14, 18, 15}, {"100", 19, 21, 26}, {"101", 25, 7, 8}, {"110", 10, 11, 9}, {"111", 4, 24, 23}};
+struct DIPsw DIPswa[10] = {
+{"10", 17, 27, 22}, {"01", 23, 24, 25}, {"11", 5, 6, 26},
+{"111", 4, 24, 23}, {"011", 14, 18, 15}, {"101", 25, 7, 8}, {"001", 17, 22, 27}, {"110", 10, 11, 9}, {"010", 12, 20, 16}, {"100", 19, 21, 26}
+};
 
 void *g_callback(void *args)
 {
@@ -96,7 +106,7 @@ void *g_callback(void *args)
                     lastval_lim = gpiod_line_get_value(lineLim);
                 }
                 fflush(stdout);
-                usleep(500000);
+                usleep(POLLINTERVAL);
             }
         }
     }
@@ -114,8 +124,13 @@ int g_gpioinit()
     chip = gpiod_chip_open_by_name(chipname);
     if (!chip)
     {
-        syslog(LOG_ERR, "Open chip failed\n");
-        exit(0);
+		chipname = "gpiochip4";
+		chip = gpiod_chip_open_by_name(chipname);
+		if (!chip)
+		{
+			syslog(LOG_ERR, "Open chip failed\n");
+			exit(0);
+		}
     }
     syslog(LOG_INFO, "Chip name: %s - label: %s - %d lines\n", gpiod_chip_name(chip), gpiod_chip_label(chip), gpiod_chip_num_lines(chip));
     linePfo = gpiod_chip_get_line(chip, DIP_sw.pfo_n);
@@ -159,14 +174,11 @@ int main(int argc, char **argv)
     {
         syslog(LOG_INFO, "Input argument: %s", argv[1]);
         bool mat = false;
-        for (u_int8_t i = 0; i < 7; i++)
+	for (u_int8_t i = 0; i < 10; i++)
         {
             if (!strcmp(argv[1], DIPswa[i].DIP))
             {
-                DIP_sw.DIP = DIPswa[i].DIP;
-                DIP_sw.pfo_n = DIPswa[i].pfo_n;
-                DIP_sw.lim_n = DIPswa[i].lim_n;
-                DIP_sw.shd_n = DIPswa[i].shd_n;
+		DIP_sw=DIPswa[i];
                 mat = true;
             }
         }
@@ -182,12 +194,12 @@ int main(int argc, char **argv)
     }
     else if (argc < 2)
     {
-        syslog(LOG_ERR, "Too few arguments...#1-3 DIP binary pattern needed.");
+        syslog(LOG_ERR, "Too few arguments...#1-3 (P1-P2-P3) or #1-2 (GT1-GT2) DIP binary pattern needed.");
         exit(0);
     }
     else if (argc > 2)
     {
-        syslog(LOG_ERR, "Too many arguments...#1-3 DIP binary pattern needed.");
+        syslog(LOG_ERR, "Too many arguments...#1-3 (P1-P2-P3) or #1-2 (GT1-GT2) DIP binary pattern needed.");
         exit(0);
     }
 

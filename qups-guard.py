@@ -9,12 +9,10 @@ GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
 if len(sys.argv)==1: # usage
-    print("Usage: qups-guard [qups board version] <DIP switch 1-2 or 1-2-3 state>")
-    print("	[board version] can be 1.1 (qUPS-P-SC-1.1) or 1.2 (qUPS-P-SC-1.2 or qUPS-P-BC-1.2) or 1.3 (qUPS-P-SC-1.3)")
-    print("	omitting [board version] means 1.2 (qUPS-P-SC-1.2 or qUPS-P-BC-1.2) or 1.3 (qUPS-P-SC-1.3) - they preserve same pins")
+    print("Usage: qups-guard <DIP switch 1-2 or 1-2-3 state>")
     print("	<DIP switch> 4 or 6 position switch settings as follows:")
-    print("              for 4 position switch 1-2-3 settings (OFF:0, ON:1) e.g 101 for 1:ON-2:OFF-3:ON")
-    print("              for 6 position switch 1-2   settings (OFF:0, ON:1) e.g 10 for GT1:ON-GT2:OFF")
+    print("              for 4 position switch P1-P2-P3 settings (OFF:0, ON:1) e.g 101 for 1:ON-2:OFF-3:ON")
+    print("              for 6 position switch GT1-GT2   settings (OFF:0, ON:1) e.g 10 for GT1:ON-GT2:OFF")
     quit()
 elif len(sys.argv)==2: # assume default qUPS-P-BC-1.2 or qUPS-P-SC-1.3
     dip = sys.argv[1]
@@ -24,9 +22,9 @@ elif len(sys.argv)==2: # assume default qUPS-P-BC-1.2 or qUPS-P-SC-1.3
 elif len(sys.argv)==3: # version and DIP
     if (sys.argv[1]=="1.1"):
         dip = sys.argv[2]
-        pin_pfo = {'111': 7, '011': 8, '101': 22, '001': 11 , '110': 19, '010': 32, '100': 35}
-        pin_lim = {'111': 18, '011': 12, '101': 26, '001': 15 , '110': 23, '010': 38, '100': 40}
-        pin_shd = {'111': 16, '011': 10, '101': 24, '001': 13 , '110': 21, '010': 36, '100': 37}
+        pin_pfo = {'111': 4, '011': 14, '101': 25, '001': 17 , '110': 10, '010': 12, '100': 19}
+        pin_lim = {'111': 24, '011': 18, '101': 7, '001': 22 , '110': 11, '010': 20, '100': 21}
+        pin_shd = {'111': 23, '011': 15, '101': 8, '001': 27 , '110': 9, '010': 16, '100': 26}
     if (sys.argv[1]=="1.2") or (sys.argv[1]=="1.3"):
         dip = sys.argv[2]
         pin_pfo = {'10': 17, '01': 23, '11': 5}
