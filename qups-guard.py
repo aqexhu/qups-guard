@@ -16,27 +16,17 @@ if len(sys.argv)==1: # usage
     quit()
 elif len(sys.argv)==2: # assume default qUPS-P-BC-1.2 or qUPS-P-SC-1.3
     dip = sys.argv[1]
-    pin_pfo = {'10': 17, '01': 23, '11': 5}
-    pin_lim = {'10': 27, '01': 24, '11': 6}
-    pin_shd = {'10': 22, '01': 25, '11': 26}
-elif len(sys.argv)==3: # version and DIP
-    if (sys.argv[1]=="1.1"):
-        dip = sys.argv[2]
-        pin_pfo = {'111': 4, '011': 14, '101': 25, '001': 17 , '110': 10, '010': 12, '100': 19}
-        pin_lim = {'111': 24, '011': 18, '101': 7, '001': 22 , '110': 11, '010': 20, '100': 21}
-        pin_shd = {'111': 23, '011': 15, '101': 8, '001': 27 , '110': 9, '010': 16, '100': 26}
-    if (sys.argv[1]=="1.2") or (sys.argv[1]=="1.3"):
-        dip = sys.argv[2]
+    if (len(dip)==2):
         pin_pfo = {'10': 17, '01': 23, '11': 5}
         pin_lim = {'10': 27, '01': 24, '11': 6}
         pin_shd = {'10': 22, '01': 25, '11': 26}
-
-
+    elif (len(dip)==3):
+        pin_pfo = {'111': 4, '011': 14, '101': 25, '001': 17 , '110': 10, '010': 12, '100': 19}
+        pin_lim = {'111': 24, '011': 18, '101': 7, '001': 22 , '110': 11, '010': 20, '100': 21}
+        pin_shd = {'111': 23, '011': 15, '101': 8, '001': 27 , '110': 9, '010': 16, '100': 26}
 
 pins=[0,0,0]
 
-print(dip)
-print(pin_pfo[dip])
 GPIO.setup(pin_pfo[dip], GPIO.IN, GPIO.PUD_OFF)
 GPIO.setup(pin_lim[dip], GPIO.IN, GPIO.PUD_OFF)
 GPIO.setup(pin_shd[dip], GPIO.OUT)
