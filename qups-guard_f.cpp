@@ -10,7 +10,6 @@ pthread_t g_thread;
 
 struct gpiod_chip *chip;
 struct gpiod_line *linePfo;
-#define DEBOUNCE_INT 500 * 1000 // 500 ms
 struct gpiod_line *lineLim;
 u_int8_t lastval_pfo = 255, lastval_lim = 255;
 bool event_pfo, event_lim;
@@ -19,6 +18,8 @@ struct timespec ts;
 
 #define CONSUMER "qUPS-guard"
 #define POLLINTERVAL 500000
+#define DEBOUNCE_COUNT 10
+#define DEBOUNCE_INTERVAL 100000
 
 struct DIPsw
 {
@@ -42,6 +43,22 @@ struct DIPsw DIPswa[10] = {
 {"10", 17, 27, 22}, {"01", 23, 24, 25}, {"11", 5, 6, 26},
 {"111", 4, 24, 23}, {"011", 14, 18, 15}, {"101", 25, 7, 8}, {"001", 17, 22, 27}, {"110", 10, 11, 9}, {"010", 12, 20, 16}, {"100", 19, 21, 26}
 };
+
+
+
+u_int8_t debounce_limit() {
+    u_int8_t debcount=0;
+    while (debcount++ < DEBOUNCE_COUNT) {
+        if (gpiod_line_get_value(lineLim)) {
+            // lineLim bouncing
+            syslog(LOG_INFO, "Limit low on %d\n", debcount);
+            return 1;
+        }
+	usleep(DEBOUNCE_INTERVAL);
+    }
+    syslog(LOG_INFO, "Limit not reached - %d\n", debcount);
+    return 0;
+} 
 
 void *g_callback(void *args)
 {
@@ -88,11 +105,15 @@ void *g_callback(void *args)
                 }
                 else if (line == lineLim)
                 {
-                    // Linit
+                    // Limit
                     if (ev_g.event_type == GPIOD_LINE_EVENT_FALLING_EDGE)
                     {
                         // Energy limit NOK
-                        syslog(LOG_INFO, "UPS energy level LOW - initiating shutdown seqence.");
+                        if (debounce_limit()) {
+                            syslog(LOG_INFO, "UPS energy level LOW - bouncing, safe shutdown postponed.");
+                            continue;
+                        }
+                        syslog(LOG_INFO, "UPS energy level LOW - initiating safe shutdown seqence.");
                         if (system("sudo shutdown -h now") == 0)
                         {
                             syslog(LOG_INFO, "Shutdown sequence succesfully initiated.");
@@ -111,6 +132,7 @@ void *g_callback(void *args)
         }
     }
 }
+
 
 int g_gpiorelease()
 {
