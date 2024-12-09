@@ -5,8 +5,9 @@
 #include <string.h>
 #include <syslog.h>
 #include <errno.h>
+#include <time.h>
 
-pthread_t g_thread;
+pthread_t g_thread, g_shdthread;
 
 struct gpiod_chip *chip;
 struct gpiod_line *linePfo;
@@ -15,11 +16,15 @@ u_int8_t lastval_pfo = 255, lastval_lim = 255;
 bool event_pfo, event_lim;
 struct gpiod_line *lineShd;
 struct timespec ts;
+struct timespec start_time, test_time;
 
 #define CONSUMER "qUPS-guard"
 #define POLLINTERVAL 500000
 #define DEBOUNCE_COUNT 10
 #define DEBOUNCE_INTERVAL 100000
+#define SHUTDOWN_DELAY 10
+u_int8_t shutdown_delay = 0;
+u_int8_t shutdown_pulse = 0;
 
 struct DIPsw
 {
@@ -28,6 +33,8 @@ struct DIPsw
     uint lim_n;
     uint shd_n;
 } DIP_sw;
+
+char dip_sw[3];
 
 // qUPS-P-SC-1.1
 // pin_pfo = {'111': 7, '011': 8, '101': 22, '001': 11 , '110': 19, '010': 32, '100': 35}
@@ -40,25 +47,32 @@ struct DIPsw
 // pin_shd = {'10': 22, '01': 25, '11': 26}
 
 struct DIPsw DIPswa[10] = {
-{"10", 17, 27, 22}, {"01", 23, 24, 25}, {"11", 5, 6, 26},
-{"111", 4, 24, 23}, {"011", 14, 18, 15}, {"101", 25, 7, 8}, {"001", 17, 22, 27}, {"110", 10, 11, 9}, {"010", 12, 20, 16}, {"100", 19, 21, 26}
-};
+    {"10", 17, 27, 22}, {"01", 23, 24, 25}, {"11", 5, 6, 26}, {"111", 4, 24, 23}, {"011", 14, 18, 15}, {"101", 25, 7, 8}, {"001", 17, 22, 27}, {"110", 10, 11, 9}, {"010", 12, 20, 16}, {"100", 19, 21, 26}};
 
-
-
-u_int8_t debounce_limit() {
-    u_int8_t debcount=0;
-    while (debcount++ < DEBOUNCE_COUNT) {
-        if (gpiod_line_get_value(lineLim)) {
+u_int8_t debounce_limit()
+{
+    u_int8_t debcount = 0;
+    while (debcount++ < DEBOUNCE_COUNT)
+    {
+        if (gpiod_line_get_value(lineLim))
+        {
             // lineLim bouncing
             syslog(LOG_INFO, "Limit low on %d\n", debcount);
             return 1;
         }
-	usleep(DEBOUNCE_INTERVAL);
+        usleep(DEBOUNCE_INTERVAL);
     }
     syslog(LOG_INFO, "Limit not reached - %d\n", debcount);
     return 0;
-} 
+}
+
+void *g_shdcallback(void *args)
+{
+    while (true)
+    {
+        usleep(POLLINTERVAL);
+    }
+}
 
 void *g_callback(void *args)
 {
@@ -109,7 +123,11 @@ void *g_callback(void *args)
                     if (ev_g.event_type == GPIOD_LINE_EVENT_FALLING_EDGE)
                     {
                         // Energy limit NOK
-                        if (debounce_limit()) {
+                        if (debounce_limit())
+                        {
+                            shutdown_pulse = true;
+                            clock_gettime(CLOCK_MONOTONIC, &start_time);
+
                             syslog(LOG_INFO, "UPS energy level LOW - bouncing, safe shutdown postponed.");
                             continue;
                         }
@@ -123,6 +141,7 @@ void *g_callback(void *args)
                     {
                         // Energy limit OK
                         syslog(LOG_INFO, "UPS energy level HIGH.");
+                        shutdown_pulse = false;
                     }
                     lastval_lim = gpiod_line_get_value(lineLim);
                 }
@@ -132,7 +151,6 @@ void *g_callback(void *args)
         }
     }
 }
-
 
 int g_gpiorelease()
 {
@@ -146,13 +164,13 @@ int g_gpioinit()
     chip = gpiod_chip_open_by_name(chipname);
     if (!chip)
     {
-		chipname = "gpiochip4";
-		chip = gpiod_chip_open_by_name(chipname);
-		if (!chip)
-		{
-			syslog(LOG_ERR, "Open chip failed\n");
-			exit(0);
-		}
+        chipname = "gpiochip4";
+        chip = gpiod_chip_open_by_name(chipname);
+        if (!chip)
+        {
+            syslog(LOG_ERR, "Open chip failed\n");
+            exit(0);
+        }
     }
     syslog(LOG_INFO, "Chip name: %s - label: %s - %d lines\n", gpiod_chip_name(chip), gpiod_chip_label(chip), gpiod_chip_num_lines(chip));
     linePfo = gpiod_chip_get_line(chip, DIP_sw.pfo_n);
@@ -181,7 +199,7 @@ int g_gpioinit()
 
 int g_gpio_events()
 {
-    if (pthread_create(&g_thread, NULL, &g_callback, NULL) != 0)
+    if ((pthread_create(&g_thread, NULL, &g_callback, NULL) && pthread_create(&g_shdthread, NULL, &g_shdcallback, NULL)) != 0)
     {
         syslog(LOG_ERR, "Thread init failed.");
         return -1;
@@ -191,39 +209,78 @@ int g_gpio_events()
 
 int main(int argc, char **argv)
 {
+    bool mat = false, mbt = false;
     openlog(CONSUMER, LOG_PID | LOG_NDELAY, LOG_USER);
-    if (argc == 2)
+
+    for (u_int8_t i = 1; i < argc; i++)
     {
-        syslog(LOG_INFO, "Input argument: %s", argv[1]);
-        bool mat = false;
-	for (u_int8_t i = 0; i < 10; i++)
+        if (strcmp(argv[i], "--shutdown-delay") == 0)
         {
-            if (!strcmp(argv[1], DIPswa[i].DIP))
+            mbt = true;
+            if (i + 1 < argc)
             {
-		DIP_sw=DIPswa[i];
-                mat = true;
+                shutdown_delay = atoi(argv[i + 1]);
+                i++;
+            }
+            else
+            {
+                fprintf(stderr, "Error: --shutdown-delay requires an argument - using default %d.\n", SHUTDOWN_DELAY);
+                shutdown_delay = SHUTDOWN_DELAY;
             }
         }
-        if (mat)
+        else if (strcmp(argv[i], "--dip") == 0)
         {
-            syslog(LOG_INFO, "Used pins (BCM) - pfo: %d, lim: %d, shd: %d", DIP_sw.pfo_n, DIP_sw.lim_n, DIP_sw.shd_n);
+            if (i + 1 < argc)
+            {
+                u_int8_t dip_len;
+                dip_len = strlen(argv[i + 1]);
+                if (dip_len == 3 || dip_len == 2)
+                {
+                    strncpy(dip_sw, argv[i + 1], dip_len);
+                    for (u_int8_t j = 0; j < 10; j++)
+                    {
+                        if (!strcmp(dip_sw, DIPswa[j].DIP))
+                        {
+                            DIP_sw = DIPswa[j];
+                            mat = true;
+                        }
+                    }
+                }
+                i++;
+            }
+            else
+            {
+                fprintf(stderr, "Error: --dip requires an argument\n");
+                exit(EXIT_FAILURE);
+            }
         }
         else
         {
-            syslog(LOG_ERR, "No match found!");
-            exit(-1);
+            fprintf(stderr, "Unknown argument: %s\n", argv[i]);
+            exit(EXIT_FAILURE);
         }
     }
-    else if (argc < 2)
+
+    if (mat)
     {
-        syslog(LOG_ERR, "Too few arguments...#1-3 (P1-P2-P3) or #1-2 (GT1-GT2) DIP binary pattern needed.");
-        exit(0);
+        syslog(LOG_INFO, "Used pins (BCM) - pfo: %d, lim: %d, shd: %d", DIP_sw.pfo_n, DIP_sw.lim_n, DIP_sw.shd_n);
+        printf("Used pins (BCM) - pfo: %d, lim: %d, shd: %d\n", DIP_sw.pfo_n, DIP_sw.lim_n, DIP_sw.shd_n);
     }
-    else if (argc > 2)
+    else
     {
-        syslog(LOG_ERR, "Too many arguments...#1-3 (P1-P2-P3) or #1-2 (GT1-GT2) DIP binary pattern needed.");
-        exit(0);
+        syslog(LOG_ERR, "Used pins not specified - usage: --dip <DIP switch GT1-2 or DIP 1-2-3>");
+        syslog(LOG_ERR, "Example: --dip 10  means DIP switch GT1=ON GT2=OFF");
+        syslog(LOG_ERR, "         --dip 100 means DIP 1=ON 2=OFF 3=OFF");
+
+        printf("Used pins not specified - usage: --dip <DIP switch GT1-2 or DIP 1-2-3>\n");
+        printf("Example: --dip 10  means DIP switch GT1=ON GT2=OFF\n");
+        printf("         --dip 100 means DIP 1=ON 2=OFF 3=OFF\n");
     }
+    if (!mbt)
+    {
+        shutdown_delay = SHUTDOWN_DELAY;
+    }
+    syslog(LOG_INFO, "Shutdown delay %d", shutdown_delay);
 
     if (!g_gpioinit())
     {
