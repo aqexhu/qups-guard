@@ -19,12 +19,10 @@ struct timespec ts;
 struct timespec start_time, test_time;
 
 #define CONSUMER "qUPS-guard"
-#define POLLINTERVAL 500000
-#define DEBOUNCE_COUNT 10
-#define DEBOUNCE_INTERVAL 100000
-#define SHUTDOWN_DELAY 10
+#define POLLINTERVAL 1000
+#define SHUTDOWN_DELAY 0
 u_int8_t shutdown_delay = 0;
-u_int8_t shutdown_pulse = 0;
+static u_int8_t shutdown_pulse = 0;
 
 struct DIPsw
 {
@@ -49,27 +47,40 @@ char dip_sw[3];
 struct DIPsw DIPswa[10] = {
     {"10", 17, 27, 22}, {"01", 23, 24, 25}, {"11", 5, 6, 26}, {"111", 4, 24, 23}, {"011", 14, 18, 15}, {"101", 25, 7, 8}, {"001", 17, 22, 27}, {"110", 10, 11, 9}, {"010", 12, 20, 16}, {"100", 19, 21, 26}};
 
-u_int8_t debounce_limit()
+double diffcltime(timespec a, timespec b)
 {
-    u_int8_t debcount = 0;
-    while (debcount++ < DEBOUNCE_COUNT)
-    {
-        if (gpiod_line_get_value(lineLim))
-        {
-            // lineLim bouncing
-            syslog(LOG_INFO, "Limit low on %d\n", debcount);
-            return 1;
-        }
-        usleep(DEBOUNCE_INTERVAL);
-    }
-    syslog(LOG_INFO, "Limit not reached - %d\n", debcount);
-    return 0;
+    // Calculate the elapsed time in nanoseconds
+    long long elapsed_nanoseconds = (b.tv_sec - a.tv_sec) * 1000000000LL +
+                                    (b.tv_nsec - a.tv_nsec);
+
+    // Convert nanoseconds to microseconds
+    return (double)(elapsed_nanoseconds / 1000.0);
 }
 
 void *g_shdcallback(void *args)
 {
     while (true)
     {
+        if (shutdown_pulse)
+        {
+            clock_gettime(CLOCK_MONOTONIC, &test_time);
+            double dct;
+            dct = diffcltime(start_time, test_time);
+            if (dct > POLLINTERVAL)
+            {
+                syslog(LOG_INFO, "Limit LOW since %.2f ms - initiating shutdown with delay %d.", dct/1000, shutdown_delay); //ms
+                // Limit was LOW for more than 500msec
+                
+                sleep(shutdown_delay);
+                syslog(LOG_INFO, "Shutdown with delay %d - expired, shutting down.", shutdown_delay);
+
+                if (system("sudo shutdown -h now") == 0)
+                {
+                    syslog(LOG_INFO, "Shutdown sequence succesfully initiated.");
+                }
+            }
+        }
+        fflush(stdout);
         usleep(POLLINTERVAL);
     }
 }
@@ -123,25 +134,16 @@ void *g_callback(void *args)
                     if (ev_g.event_type == GPIOD_LINE_EVENT_FALLING_EDGE)
                     {
                         // Energy limit NOK
-                        if (debounce_limit())
-                        {
-                            shutdown_pulse = true;
-                            clock_gettime(CLOCK_MONOTONIC, &start_time);
-
-                            syslog(LOG_INFO, "UPS energy level LOW - bouncing, safe shutdown postponed.");
-                            continue;
-                        }
-                        syslog(LOG_INFO, "UPS energy level LOW - initiating safe shutdown seqence.");
-                        if (system("sudo shutdown -h now") == 0)
-                        {
-                            syslog(LOG_INFO, "Shutdown sequence succesfully initiated.");
-                        }
+                        shutdown_pulse = 1;
+                        clock_gettime(CLOCK_MONOTONIC, &start_time);
+                        syslog(LOG_INFO, "UPS energy level LOW.");
+                        continue;
                     }
                     else if (ev_g.event_type == GPIOD_LINE_EVENT_RISING_EDGE)
                     {
                         // Energy limit OK
                         syslog(LOG_INFO, "UPS energy level HIGH.");
-                        shutdown_pulse = false;
+                        shutdown_pulse = 0;
                     }
                     lastval_lim = gpiod_line_get_value(lineLim);
                 }
@@ -187,11 +189,33 @@ int g_gpioinit()
     {
         syslog(LOG_ERR, "Pfo line event request failed: %s", strerror(errno));
     }
+    else
+    {
+        if (gpiod_line_get_value(linePfo) == 0)
+        {
+            syslog(LOG_INFO, "UPS line power NOK!");
+        }
+        else
+        {
+            syslog(LOG_INFO, "UPS line power OK!");
+        }
+    }
 
     retv = gpiod_line_request_both_edges_events_flags(lineLim, CONSUMER, GPIOD_LINE_REQUEST_FLAG_BIAS_DISABLE);
     if (retv == -1)
     {
         syslog(LOG_ERR, "Lim line event request failed: %s", strerror(errno));
+    }
+    else
+    {
+        if (gpiod_line_get_value(lineLim) == 0)
+        {
+            syslog(LOG_INFO, "UPS energy level LOW.");
+        }
+        else
+        {
+            syslog(LOG_INFO, "UPS energy level HIGH.");
+        }
     }
 
     return 0;
@@ -199,11 +223,18 @@ int g_gpioinit()
 
 int g_gpio_events()
 {
-    if ((pthread_create(&g_thread, NULL, &g_callback, NULL) && pthread_create(&g_shdthread, NULL, &g_shdcallback, NULL)) != 0)
+    if (pthread_create(&g_thread, NULL, &g_callback, NULL) != 0)
     {
         syslog(LOG_ERR, "Thread init failed.");
         return -1;
     }
+
+    if (pthread_create(&g_shdthread, NULL, &g_shdcallback, NULL))
+    {
+        syslog(LOG_ERR, "Thread init failed.");
+        return -1;
+    }
+
     return 0;
 }
 
