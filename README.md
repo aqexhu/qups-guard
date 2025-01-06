@@ -50,19 +50,24 @@ or
 
 The manually or automatically started qups-guard will keep track of energy level and power supply. 
 Manual start from command line (assumed repo cloned to pi home dir and DIP is set to 100):
+
 *A manuálisan vagy automatikusan indított qups-guard nyomon követi az energiaszintet és az áramellátást. 
 Kézi indítás parancssorból (feltételezve, hogy a repo a pi home könyvtárba került klónozásra és a DIP 100-ra van állítva):*
+
 ```
 /home/pi/qups-guard/qups-guard_f --dip 100
 ```
 
 If power fails, syslog will be updated with the ```Power NOK!``` information. If power keeps failing and the supercapacitor/battery voltage level drops below high voltage limit, the LED changes from **green** to **amber**. After depleting below low voltage limit, **red** LED also starts up and syslog is updated with ```UPS level LOW - initiating shutdown seqence.```
+
 *Ha a tápellátás kiesik, a syslog frissül a ```Power NOK!``` információval. Ha a tápellátás továbbra sem áll helyre, és az energiatároló feszültségszintje a HIGH határérték alá csökken, a LED **zöldről** **borostyánszínűre** változik. Az alacsony feszültséghatár alá történő lemerülés után a **piros** LED is bekapcsol, és a syslog frissül a ```UPS level LOW - initiating shutdown seqence.```*
 
 On power resume, the capacitor gets filled above high voltage limit and the computer gets powered up by the qups.
 There is a secondary argument, which can fine-tune the power source to the safe shutdown interval, maximizing availability - it is called ```shutdown-delay``` and can be provided in seconds unit of measure. The histeresis on switching the battery limit from high to low can be different for each battery, therefor this optional parameter can further optimize the usage. Example usage for delaying the shutdown with 10 seconds after battery limit reaches low:
+
 *A tápellátás újraindításakor a kondenzátor a HIGH határérték fölé töltődik, és a számítógépet a qups bekapcsolja.
 Van egy másodlagos paraméter, amely finomhangolhatja az áramforrást a biztonságos leállítási intervallumra, maximalizálva a rendelkezésre állást - ezt ```shutdown-delay``-nek nevezik, és másodperc mértékegységben adható meg. Az akkumulátor-határérték HIGH->LOW történő átkapcsolásakor fellépő hiszterézis minden egyes akkumulátor esetében eltérő lehet, ezért ez az opcionális paraméter tovább javíthatja az energiakihasználtságot. Példa a kikapcsolás 10 másodperces késleltetésére, miután az akkumulátor határértéke eléri az alacsony értéket:*
+
 ```
 /home/pi/qups-guard/qups-guard_f --dip 100 --shutdown-delay 10
 ```
@@ -71,4 +76,5 @@ Van egy másodlagos paraméter, amely finomhangolhatja az áramforrást a bizton
 ## 5. Autostart / *Autostart*
 
 You can utilize systemd service model. Therefor the service file is located in the repository "systemd" folder. Be careful, that it is parametrized for python script, user "pi" and with "100" DIP switch setting. Any other combinations are free to use - please take care for the software file adjustments.
+
 *Használhatja a systemd szolgáltatási modellt. Ezért a szolgáltatásfájl a „systemd” mappában található. Vigyázzon, hogy a python szkripthez, a „pi” felhasználóhoz és a „100” DIP-kapcsoló beállításához legyen paraméterezve. Bármilyen más kombináció szabadon használható - ez esetben a fájlokat módosítani kell.*
