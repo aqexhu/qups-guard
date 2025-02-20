@@ -55,7 +55,7 @@ u_int8_t debounce_limit() {
         }
         usleep(DEBOUNCE_INTERVAL);
     }
-    syslog(LOG_INFO, "Limit low not returned - initiate shutdown.\n", debcount);
+    syslog(LOG_INFO, "Limit low not returned - initiate shutdown.\n");
     u_int8_t shdcnt=shutdown_delay;
     while (shdcnt-->0) {
         syslog(LOG_INFO, "Shutdown delay counter: %d/%d.\n", shdcnt, shutdown_delay);
