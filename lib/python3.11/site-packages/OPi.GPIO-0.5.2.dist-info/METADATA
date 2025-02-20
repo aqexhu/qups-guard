@@ -1,0 +1,171 @@
+Metadata-Version: 2.1
+Name: OPi.GPIO
+Version: 0.5.2
+Summary: A drop-in replacement for RPi.GPIO for the Orange Pi Zero
+Home-page: https://github.com/rm-hull/OPi.GPIO
+Author: Richard Hull
+Author-email: richard.hull@destructuring-bind.org
+License: MIT
+Download-URL: https://github.com/rm-hull/OPi.GPIO/tarball/0.5.2
+Keywords: orange pi opi gpio
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Education
+Classifier: Topic :: System :: Hardware
+Classifier: Topic :: System :: Hardware :: Hardware Drivers
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Provides-Extra: docs
+Requires-Dist: sphinx (>=1.5.3) ; extra == 'docs'
+Provides-Extra: test
+Requires-Dist: mock ; extra == 'test'
+Requires-Dist: pytest ; extra == 'test'
+Requires-Dist: pytest-cov ; extra == 'test'
+Requires-Dist: pyfakefs ; extra == 'test'
+
+OPi.GPIO
+========
+
+.. image:: https://travis-ci.org/rm-hull/OPi.GPIO.svg?branch=master
+   :target: https://travis-ci.org/rm-hull/OPi.GPIO
+
+.. image:: https://coveralls.io/repos/github/rm-hull/OPi.GPIO/badge.svg?branch=master
+   :target: https://coveralls.io/github/rm-hull/OPi.GPIO?branch=master
+
+.. image:: https://readthedocs.org/projects/opi-gpio/badge/?version=latest
+   :target: http://opi-gpio.readthedocs.io/en/latest/?badge=latest
+
+.. image:: https://img.shields.io/pypi/pyversions/OPi.GPIO.svg
+   :target: https://pypi.python.org/pypi/OPi.GPIO
+
+.. image:: https://img.shields.io/pypi/v/OPi.GPIO.svg
+   :target: https://pypi.python.org/pypi/OPi.GPIO
+
+.. image:: https://img.shields.io/maintenance/yes/2021.svg?maxAge=2592000
+
+A drop-in replacement library for `RPi.GPIO <https://sourceforge.net/projects/raspberry-gpio-python/>`_
+for the Orange Pi Zero and other SBCs. Only the basic GPIO functions are replicated,
+using sysfs: this allows the GPIO pins to be accessed from user space.
+
+See the `documentation <https://opi-gpio.readthedocs.io>`_ for install
+instructions and detailed API usage.
+
+References
+----------
+* https://www.kernel.org/doc/Documentation/gpio/sysfs.txt
+* http://linux-sunxi.org/GPIO
+* https://forum.armbian.com/index.php?/topic/1471-solved-difficulty-accessing-gpio-via-the-sunxi-gpio-export-interface/
+* https://forum.armbian.com/index.php?/topic/3655-guide-orange-pi-zero-gpios/
+* https://jsfiddle.net/tuav7f6q/2/
+* https://www.mysensors.org/build/orange
+* https://kaspars.net/blog/linux/orange-pi-zero-gpio
+* https://developer.toradex.com/knowledge-base/pwm-linux
+
+License
+-------
+The MIT License
+
+Copyright (c) 2018 Richard Hull
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+Contributing
+------------
+
+Pull requests (code changes / documentation / typos / feature requests / setup)
+are gladly accepted. If you are intending to introduce some large-scale
+changes, please get in touch first to make sure we're on the same page: try to
+include a docstring for any new method or class, and keep method bodies small,
+readable and PEP8-compliant. Add tests and strive to keep the code coverage
+levels high.
+
+GitHub
+^^^^^^
+The source code is available to clone at: https://github.com/rm-hull/OPi.GPIO
+
+Contributors
+^^^^^^^^^^^^
+* Simon Rowe (@srowe)
+* Steven P. Goldsmith (@sgjava)
+* Adrian Cuzman (@adriancuzman)
+* Mathieu Pasquet (@winterscar)
+* @5kft
+* Stephen Sorriaux (@StephenSorriaux)
+* Michael Still (@mikalstill)
+* Pascal Roeleven (@pascallj)
+
+
+ChangeLog
+---------
+
++------------+---------------------------------------------------------------------+------------+
+| Version    | Description                                                         | Date       |
++============+=====================================================================+============+
+| **0.5.2**  | * Add full 40-pin header for Orange Pi 4(B)                         | 2021/10/22 |
++------------+---------------------------------------------------------------------+------------+
+| **0.5.1**  | * Updated orange pi 4B mappings                                     | 2021/08/19 |
++------------+---------------------------------------------------------------------+------------+
+| **0.5.0**  | * Added Hardware PWM Control                                        | 2021/04/25 |
+|            | * Add support for the NanoPi M4 family                              |            |
+|            | * Add pin mapping for orange pi 4 & 4B models                       |            |
+|            | * Add rockpi/rockpi s packages added                                |            |
+|            | * Fix OrangePi PC BCM Pin map                                       |            |
++------------+---------------------------------------------------------------------+------------+
+| **0.4.0**  | * Added various new pin mappings for Orange Pi variants             | 2019/10/21 |
++------------+---------------------------------------------------------------------+------------+
+| **0.3.6**  | * Expose pullup resistor constants to API users                     | 2019/01/14 |
+|            | * Add pin mappings for OrangePi Prime                               |            |
++------------+---------------------------------------------------------------------+------------+
+| **0.3.5**  | * Added OrangePi Lite & One pin mappings                            | 2018/11/10 |
++------------+---------------------------------------------------------------------+------------+
+| **0.3.4**  | * Added more OrangePi and NanoPi pin mappings                       | 2018/09/16 |
++------------+---------------------------------------------------------------------+------------+
+| **0.3.3**  | * Added waits for UDEV rules                                        | 2018/09/15 |
++------------+---------------------------------------------------------------------+------------+
+| **0.3.2**  | * Added OrangePi PC pin mappings                                    | 2018/03/04 |
++------------+---------------------------------------------------------------------+------------+
+| **0.3.1**  | * Added NanoPi DUO pin mappings                                     | 2018/01/01 |
++------------+---------------------------------------------------------------------+------------+
+| **0.3.0**  | * Added alternate pin mappings                                      | 2017/12/31 |
++------------+---------------------------------------------------------------------+------------+
+| **0.2.5**  | * sysfs: set output() value to 0 or 1                               | 2017/07/15 |
++------------+---------------------------------------------------------------------+------------+
+| **0.2.4**  | * Add compatibility for pull up/down and bouncetime params          | 2017/05/27 |
++------------+---------------------------------------------------------------------+------------+
+| **0.2.3**  | * Make worker threads daemonic (can't exit otherwise)               | 2017/05/26 |
++------------+---------------------------------------------------------------------+------------+
+| **0.2.2**  | * ``GPIO.setup()`` catches IOError and re-exports                   | 2017/03/28 |
++------------+---------------------------------------------------------------------+------------+
+| **0.2.1**  | * Minor bug fixes                                                   | 2017/03/14 |
+|            | * Additional tests                                                  |            |
++------------+---------------------------------------------------------------------+------------+
+| **0.2.0**  | * Added edge detection and eventing                                 | 2017/03/14 |
++------------+---------------------------------------------------------------------+------------+
+| **0.1.0**  | * Initial version                                                   | 2017/03/11 |
++------------+---------------------------------------------------------------------+------------+
+
+
