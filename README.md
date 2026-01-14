@@ -70,10 +70,10 @@ GPIO API v2 (debian trixie and later) you need to compile:
 ## 4. Usage / *Használat*
 
 The manually or automatically started qups-guard will keep track of energy level and power supply. 
-Manual start from command line (assumed repo cloned to pi home dir and DIP is set to 100):
+Manual start from command line (assumed repo cloned to pi home dir and DIP is set to 01 or no DIP):
 
 *A manuálisan vagy automatikusan indított qups-guard nyomon követi az energiaszintet és az áramellátást. 
-Kézi indítás parancssorból (feltételezve, hogy a repo a pi home könyvtárba került klónozásra és a DIP 100-ra van állítva):*
+Kézi indítás parancssorból (feltételezve, hogy a repo a pi home könyvtárba került klónozásra és a DIP 01-ra van állítva vagy nincs DIP):*
 
 ```
 /home/pi/qups-guard/qups-guard2 --dip 01
@@ -90,7 +90,7 @@ There is a secondary argument, which can fine-tune the power source to the safe 
 Van egy másodlagos paraméter, amely finomhangolhatja az áramforrást a biztonságos leállítási intervallumra, maximalizálva a rendelkezésre állást - ezt ```shutdown-delay``-nek nevezik, és másodperc mértékegységben adható meg. Az akkumulátor-határérték HIGH->LOW történő átkapcsolásakor fellépő hiszterézis minden egyes akkumulátor esetében eltérő lehet, ezért ez az opcionális paraméter tovább javíthatja az energiakihasználtságot. Példa a kikapcsolás 10 másodperces késleltetésére, miután az akkumulátor határértéke eléri az alacsony értéket:*
 
 ```
-/home/pi/qups-guard/qups-guard2 --dip 10 --shutdown-delay 10
+/home/pi/qups-guard/qups-guard2 --dip 01 --shutdown-delay 10
 ```
 
 
