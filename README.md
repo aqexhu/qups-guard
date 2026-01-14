@@ -76,7 +76,7 @@ Manual start from command line (assumed repo cloned to pi home dir and DIP is se
 Kézi indítás parancssorból (feltételezve, hogy a repo a pi home könyvtárba került klónozásra és a DIP 100-ra van állítva):*
 
 ```
-/home/pi/qups-guard/qups-guard_f --dip 100
+/home/pi/qups-guard/qups-guard2 --dip 01
 ```
 
 If power fails, syslog will be updated with the ```Power NOK!``` information. If power keeps failing and the supercapacitor/battery voltage level drops below high voltage limit, the LED changes from **green** to **amber**. After depleting below low voltage limit, **red** LED also starts up and syslog is updated with ```UPS level LOW - initiating shutdown seqence.```
@@ -90,7 +90,7 @@ There is a secondary argument, which can fine-tune the power source to the safe 
 Van egy másodlagos paraméter, amely finomhangolhatja az áramforrást a biztonságos leállítási intervallumra, maximalizálva a rendelkezésre állást - ezt ```shutdown-delay``-nek nevezik, és másodperc mértékegységben adható meg. Az akkumulátor-határérték HIGH->LOW történő átkapcsolásakor fellépő hiszterézis minden egyes akkumulátor esetében eltérő lehet, ezért ez az opcionális paraméter tovább javíthatja az energiakihasználtságot. Példa a kikapcsolás 10 másodperces késleltetésére, miután az akkumulátor határértéke eléri az alacsony értéket:*
 
 ```
-/home/pi/qups-guard/qups-guard_f --dip 100 --shutdown-delay 10
+/home/pi/qups-guard/qups-guard2 --dip 010 --shutdown-delay 10
 ```
 
 
