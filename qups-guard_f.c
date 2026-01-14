@@ -8,6 +8,7 @@
 #include <syslog.h>
 #include <errno.h>
 #include <time.h>
+#include <stdbool.h>
 
 pthread_t g_thread, g_shdthread;
 
@@ -19,6 +20,9 @@ bool event_pfo, event_lim;
 struct gpiod_line *lineShd;
 struct timespec ts;
 struct timespec start_time, test_time;
+struct gpiod_line_request *in_request = NULL;
+struct gpiod_line_request *shd_request = NULL;
+struct gpiod_edge_event_buffer *evbuf = NULL;
 
 #define CONSUMER "qUPS-guard"
 #define POLLINTERVAL 1000
@@ -36,26 +40,15 @@ struct DIPsw
 
 char dip_sw[4];
 
-// qUPS-P-SC-1.1
-// pin_pfo = {'111': 7, '011': 8, '101': 22, '001': 11 , '110': 19, '010': 32, '100': 35}
-// pin_lim = {'111': 18, '011': 12, '101': 26, '001': 15 , '110': 23, '010': 38, '100': 40}
-// pin_shd = {'111': 16, '011': 10, '101': 24, '001': 13 , '110': 21, '010': 36, '100': 37}
-//
-// qUPS-P-BC-1.2 and qUPS-P-BC-1.3
-// pin_pfo = {'10': 17, '01': 23, '11': 5}
-// pin_lim = {'10': 27, '01': 24, '11': 6}
-// pin_shd = {'10': 22, '01': 25, '11': 26}
-
 struct DIPsw DIPswa[10] = {
     {"10", 17, 27, 22}, {"01", 23, 24, 25}, {"11", 5, 6, 26}, {"111", 4, 24, 23}, {"011", 14, 18, 15}, {"101", 25, 7, 8}, {"001", 17, 22, 27}, {"110", 10, 11, 9}, {"010", 12, 20, 16}, {"100", 19, 21, 26}};
 
-double diffcltime(timespec a, timespec b)
+
+double diffcltime(struct timespec a, struct timespec b)
 {
-    // Calculate the elapsed time in nanoseconds
     long long elapsed_nanoseconds = (b.tv_sec - a.tv_sec) * 1000000000LL +
                                     (b.tv_nsec - a.tv_nsec);
 
-    // Convert nanoseconds to microseconds
     return (double)(elapsed_nanoseconds / 1000.0);
 }
 
@@ -70,9 +63,8 @@ void *g_shdcallback(void *args)
             dct = diffcltime(start_time, test_time);
             if (dct > POLLINTERVAL)
             {
-                syslog(LOG_INFO, "Limit LOW since %.2f ms - initiating shutdown with delay %d.", dct/1000, shutdown_delay); //ms
-                // Limit was LOW for more than 500msec
-                
+                syslog(LOG_INFO, "Limit LOW since %.2f ms - initiating shutdown with delay %d.", dct/1000, shutdown_delay);
+
                 sleep(shutdown_delay);
                 syslog(LOG_INFO, "Shutdown with delay %d - expired, shutting down.", shutdown_delay);
 
@@ -89,136 +81,142 @@ void *g_shdcallback(void *args)
 
 void *g_callback(void *args)
 {
-    struct gpiod_line_bulk bulk[2], events[2];
-    struct gpiod_line_event ev_g;
-
-    gpiod_line_bulk_add(bulk, linePfo);
-    gpiod_line_bulk_add(bulk, lineLim);
+    /* Use libgpiod v2 line request / edge-event buffer API */
+    const int buf_capacity = 64;
+    evbuf = gpiod_edge_event_buffer_new(buf_capacity);
+    int64_t timeout_ns = (int64_t)ts.tv_sec * 1000000000LL + ts.tv_nsec;
 
     while (true)
     {
-        if (gpiod_line_event_wait_bulk(bulk, &ts, events))
+        int ret = gpiod_line_request_wait_edge_events(in_request, timeout_ns);
+        if (ret == 1)
         {
-            for (u_int8_t i = 0; i < gpiod_line_bulk_num_lines(events); i++)
+            int nread = gpiod_line_request_read_edge_events(in_request, evbuf, buf_capacity);
+            if (nread <= 0)
+                continue;
+
+            size_t nevents = gpiod_edge_event_buffer_get_num_events(evbuf);
+            for (size_t i = 0; i < nevents; ++i)
             {
-                struct gpiod_line *line;
-                line = gpiod_line_bulk_get_line(events, i);
-                if (!line)
+                struct gpiod_edge_event *ev = gpiod_edge_event_buffer_get_event(evbuf, i);
+                enum gpiod_edge_event_type et = gpiod_edge_event_get_event_type(ev);
+                unsigned int offset = gpiod_edge_event_get_line_offset(ev);
+
+                if (offset == DIP_sw.pfo_n)
                 {
-                    syslog(LOG_ERR, "Unable to get line %d\n", i);
-                    continue;
-                }
-                gpiod_line_event_read(line, &ev_g);
-                if (line == linePfo)
-                {
-                    // Power
-                    if (ev_g.event_type == GPIOD_LINE_EVENT_FALLING_EDGE)
+                    if (et == GPIOD_EDGE_EVENT_FALLING_EDGE)
                     {
-                        // Power NOK
-                        if (lastval_pfo != gpiod_line_get_value(linePfo))
-                        {
+                        if (lastval_pfo != gpiod_line_request_get_value(in_request, DIP_sw.pfo_n))
                             syslog(LOG_INFO, "UPS line power NOK!");
-                        }
                     }
-                    else if (ev_g.event_type == GPIOD_LINE_EVENT_RISING_EDGE)
+                    else if (et == GPIOD_EDGE_EVENT_RISING_EDGE)
                     {
-                        // Power OK
-                        if (lastval_pfo != gpiod_line_get_value(linePfo))
-                        {
+                        if (lastval_pfo != gpiod_line_request_get_value(in_request, DIP_sw.pfo_n))
                             syslog(LOG_INFO, "UPS line power OK.");
-                        }
                     }
-                    lastval_pfo = gpiod_line_get_value(linePfo);
+                    lastval_pfo = (uint8_t)gpiod_line_request_get_value(in_request, DIP_sw.pfo_n);
                 }
-                else if (line == lineLim)
+                else if (offset == DIP_sw.lim_n)
                 {
-                    // Limit
-                    if (ev_g.event_type == GPIOD_LINE_EVENT_FALLING_EDGE)
+                    if (et == GPIOD_EDGE_EVENT_FALLING_EDGE)
                     {
-                        // Energy limit NOK
                         shutdown_pulse = 1;
                         clock_gettime(CLOCK_MONOTONIC, &start_time);
                         syslog(LOG_INFO, "UPS energy level LOW.");
-                        continue;
                     }
-                    else if (ev_g.event_type == GPIOD_LINE_EVENT_RISING_EDGE)
+                    else if (et == GPIOD_EDGE_EVENT_RISING_EDGE)
                     {
-                        // Energy limit OK
                         syslog(LOG_INFO, "UPS energy level HIGH.");
                         shutdown_pulse = 0;
                     }
-                    lastval_lim = gpiod_line_get_value(lineLim);
+                    lastval_lim = (uint8_t)gpiod_line_request_get_value(in_request, DIP_sw.lim_n);
                 }
-                fflush(stdout);
-                usleep(POLLINTERVAL);
             }
         }
+        fflush(stdout);
+        usleep(POLLINTERVAL);
     }
 }
 
 int g_gpiorelease()
 {
+    if (in_request)
+        gpiod_line_request_release(in_request);
+    if (shd_request)
+        gpiod_line_request_release(shd_request);
+    if (evbuf)
+        gpiod_edge_event_buffer_free(evbuf);
     gpiod_chip_close(chip);
     return 0;
 }
 
 int g_gpioinit()
 {
-    const char *chipname = "gpiochip0";
-    chip = gpiod_chip_open_by_name(chipname);
+    const char *chippath = "/dev/gpiochip0";
+    chip = gpiod_chip_open(chippath);
     if (!chip)
     {
-        chipname = "gpiochip4";
-        chip = gpiod_chip_open_by_name(chipname);
+        chippath = "/dev/gpiochip4";
+        chip = gpiod_chip_open(chippath);
         if (!chip)
         {
             syslog(LOG_ERR, "Open chip failed\n");
             exit(0);
         }
     }
-    syslog(LOG_INFO, "Chip name: %s - label: %s - %d lines\n", gpiod_chip_name(chip), gpiod_chip_label(chip), gpiod_chip_num_lines(chip));
-    linePfo = gpiod_chip_get_line(chip, DIP_sw.pfo_n);
-    lineLim = gpiod_chip_get_line(chip, DIP_sw.lim_n);
-    lineShd = gpiod_chip_get_line(chip, DIP_sw.shd_n);
-    gpiod_line_request_output(lineShd, CONSUMER, 1); // TODO
+
+    struct gpiod_chip_info *info = gpiod_chip_get_info(chip);
+    if (info)
+    {
+        syslog(LOG_INFO, "Chip name: %s - label: %s - %zu lines\n",
+               gpiod_chip_info_get_name(info), gpiod_chip_info_get_label(info), gpiod_chip_info_get_num_lines(info));
+        gpiod_chip_info_free(info);
+    }
+
+    /* Prepare request for output (shutdown) line */
+    struct gpiod_request_config *reqcfg_out = gpiod_request_config_new();
+    gpiod_request_config_set_consumer(reqcfg_out, CONSUMER);
+    struct gpiod_line_settings *settings_out = gpiod_line_settings_new();
+    gpiod_line_settings_set_direction(settings_out, GPIOD_LINE_DIRECTION_OUTPUT);
+    gpiod_line_settings_set_output_value(settings_out, GPIOD_LINE_VALUE_ACTIVE);
+    struct gpiod_line_config *linecfg_out = gpiod_line_config_new();
+    unsigned int out_offsets[1] = {DIP_sw.shd_n};
+    gpiod_line_config_add_line_settings(linecfg_out, out_offsets, 1, settings_out);
+    shd_request = gpiod_chip_request_lines(chip, reqcfg_out, linecfg_out);
+    gpiod_line_settings_free(settings_out);
+    gpiod_line_config_free(linecfg_out);
+    gpiod_request_config_free(reqcfg_out);
+
+    /* Prepare request for input lines (pfo + lim) */
+    struct gpiod_request_config *reqcfg_in = gpiod_request_config_new();
+    gpiod_request_config_set_consumer(reqcfg_in, CONSUMER);
+    struct gpiod_line_settings *settings_in = gpiod_line_settings_new();
+    gpiod_line_settings_set_direction(settings_in, GPIOD_LINE_DIRECTION_INPUT);
+    gpiod_line_settings_set_edge_detection(settings_in, GPIOD_LINE_EDGE_BOTH);
+    gpiod_line_settings_set_bias(settings_in, GPIOD_LINE_BIAS_DISABLED);
+    struct gpiod_line_config *linecfg_in = gpiod_line_config_new();
+    unsigned int in_offsets[2] = {DIP_sw.pfo_n, DIP_sw.lim_n};
+    gpiod_line_config_add_line_settings(linecfg_in, in_offsets, 2, settings_in);
+    in_request = gpiod_chip_request_lines(chip, reqcfg_in, linecfg_in);
+    gpiod_line_settings_free(settings_in);
+    gpiod_line_config_free(linecfg_in);
+    gpiod_request_config_free(reqcfg_in);
 
     ts.tv_sec = 10;
     ts.tv_nsec = 0;
 
-    lastval_pfo = gpiod_line_get_value(linePfo);
-    int retv = gpiod_line_request_both_edges_events_flags(linePfo, CONSUMER, GPIOD_LINE_REQUEST_FLAG_BIAS_DISABLE);
-    if (retv == -1)
-    {
-        syslog(LOG_ERR, "Pfo line event request failed: %s", strerror(errno));
-    }
+    /* Read initial values */
+    lastval_pfo = (uint8_t)gpiod_line_request_get_value(in_request, DIP_sw.pfo_n);
+    if (lastval_pfo == 0)
+        syslog(LOG_INFO, "UPS line power NOK!");
     else
-    {
-        if (gpiod_line_get_value(linePfo) == 0)
-        {
-            syslog(LOG_INFO, "UPS line power NOK!");
-        }
-        else
-        {
-            syslog(LOG_INFO, "UPS line power OK!");
-        }
-    }
+        syslog(LOG_INFO, "UPS line power OK!");
 
-    retv = gpiod_line_request_both_edges_events_flags(lineLim, CONSUMER, GPIOD_LINE_REQUEST_FLAG_BIAS_DISABLE);
-    if (retv == -1)
-    {
-        syslog(LOG_ERR, "Lim line event request failed: %s", strerror(errno));
-    }
+    lastval_lim = (uint8_t)gpiod_line_request_get_value(in_request, DIP_sw.lim_n);
+    if (lastval_lim == 0)
+        syslog(LOG_INFO, "UPS energy level LOW.");
     else
-    {
-        if (gpiod_line_get_value(lineLim) == 0)
-        {
-            syslog(LOG_INFO, "UPS energy level LOW.");
-        }
-        else
-        {
-            syslog(LOG_INFO, "UPS energy level HIGH.");
-        }
-    }
+        syslog(LOG_INFO, "UPS energy level HIGH.");
 
     return 0;
 }
@@ -245,12 +243,12 @@ int main(int argc, char **argv)
     bool mat = false, mbt = false;
     openlog(CONSUMER, LOG_PID | LOG_NDELAY, LOG_USER);
 
-    for (u_int8_t i = 1; i < argc; i++)
+    for (unsigned int i = 1; i < (unsigned int)argc; i++)
     {
         if (strcmp(argv[i], "--shutdown-delay") == 0)
         {
             mbt = true;
-            if (i + 1 < argc)
+            if (i + 1 < (unsigned int)argc)
             {
                 shutdown_delay = atoi(argv[i + 1]);
                 i++;
@@ -263,14 +261,15 @@ int main(int argc, char **argv)
         }
         else if (strcmp(argv[i], "--dip") == 0)
         {
-            if (i + 1 < argc)
+            if (i + 1 < (unsigned int)argc)
             {
-                u_int8_t dip_len;
+                unsigned int dip_len;
                 dip_len = strlen(argv[i + 1]);
                 if (dip_len == 3 || dip_len == 2)
                 {
                     strncpy(dip_sw, argv[i + 1], dip_len);
-                    for (u_int8_t j = 0; j < 10; j++)
+                    dip_sw[dip_len] = '\0';
+                    for (unsigned int j = 0; j < 10; j++)
                     {
                         if (!strcmp(dip_sw, DIPswa[j].DIP))
                         {
