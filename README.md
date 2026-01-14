@@ -35,8 +35,23 @@ Libraries needed:
 ```
 libgpiod-dev
 ```
+Test installation with:
+```
+apt list --installed | grep libgpio
+```
+On Raspberry OS based on Debian 13 / Trixie, following is seen:
+```
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
 
-You can compile the source files with following options and libraries:
+libgpiod-dev/stable,now 2.2.1-2+rpi1+deb13u1 armhf [installed]
+libgpiod3/stable,now 2.2.1-2+rpi1+deb13u1 armhf [installed,automatic]
+libgpiolib0/stable,now 20251120-1 armhf [installed,automatic]
+python3-libgpiod/stable,now 2.2.1-2+rpi1+deb13u1 armhf [installed]
+```
+
+Compilation from source provided:
+
+GPIO API v1 (e.g. before debian trixie)
 ```
 /usr/bin/gcc -Wall qups-guard.cpp -o qups-guard -lpthread -lgpiod
 ```
@@ -44,6 +59,12 @@ or
 ```
 /usr/bin/gcc -Wall qups-guard_f.cpp -o qups-guard_f -lpthread -lgpiod
 ```
+
+GPIO API v2 (debian trixie and later) you need to compile:
+```
+/usr/bin/gcc -Wall qups-guard2.c -o qups-guard2 -lpthread -lgpiod
+```
+
 
 
 ## 4. Usage / *Használat*
