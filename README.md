@@ -90,7 +90,7 @@ There is a secondary argument, which can fine-tune the power source to the safe 
 Van egy másodlagos paraméter, amely finomhangolhatja az áramforrást a biztonságos leállítási intervallumra, maximalizálva a rendelkezésre állást - ezt ```shutdown-delay``-nek nevezik, és másodperc mértékegységben adható meg. Az akkumulátor-határérték HIGH->LOW történő átkapcsolásakor fellépő hiszterézis minden egyes akkumulátor esetében eltérő lehet, ezért ez az opcionális paraméter tovább javíthatja az energiakihasználtságot. Példa a kikapcsolás 10 másodperces késleltetésére, miután az akkumulátor határértéke eléri az alacsony értéket:*
 
 ```
-/home/pi/qups-guard/qups-guard2 --dip 010 --shutdown-delay 10
+/home/pi/qups-guard/qups-guard2 --dip 10 --shutdown-delay 10
 ```
 
 
