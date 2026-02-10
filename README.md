@@ -7,6 +7,17 @@
 ![last_commit](https://img.shields.io/github/last-commit/aqexhu/qups-guard)
 ![opsys](https://badgen.net/badge/linux/OK/green?icon=github)
 
+## 0. Quick start / *Gyors üzembehelyezés*
+
+Install up-to-date *libgpiod-dev* and run the corresponding pre-compiled binary from this repository:
+
+For Raspberry Pi 5 (64 bit):
+```spec / RaspberryPi5 / qups-guard2```
+For Raspberry Pi 4 API v1:
+```spec / RaspberryPi4 / qups-guard```
+For Raspberry Pi 4 API v2:
+```spec / RaspberryPi4 / qups-guard2```
+
 ## 1. Greeting / *Üdvözlet*
 
 First of all, we would like to express our deeply honest greeting to all of you, who lay trust in our efforts and use our products! We are working hard day-by-day to keep software and hardware up-to-date and develop the products and ourselves. We are trying to deliver devices and services, which serve your lives and purposes better, than any past ones, taking our environment also in focus. Sustainable, long lifespan, reliable, flexible and easy to use - in a green shape!
