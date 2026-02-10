@@ -13,8 +13,10 @@ Install up-to-date *libgpiod-dev* and run the corresponding pre-compiled binary 
 
 For Raspberry Pi 5 (64 bit):
 ```spec / RaspberryPi5 / qups-guard2```
+
 For Raspberry Pi 4 API v1:
 ```spec / RaspberryPi4 / qups-guard```
+
 For Raspberry Pi 4 API v2:
 ```spec / RaspberryPi4 / qups-guard2```
 
