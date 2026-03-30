@@ -36,11 +36,11 @@ Compatible products:
 - [qUPS-P-BC](https://www.aqex.eu/qups-p-bc-raspberry-pi-ups-hat-with-battery.html)
 
 *A qUPS szünetmentes tápegységet azért hoztuk létre, mert a kritikus fontosságú végpontoknak védelemre van szükségük az áramkimaradások vagy áramszünetek ellen, és hosszabb áramkimaradások esetén a szinkronizálást/utolsó kommunikációt/biztonságos leállást el kell indítani, mielőtt minden elsötétül.
-Megoldásunk egyszerű felépítésű, nagy rugalmassággal - a feszültségszintek és a GPIO-k konfigurálhatók.
+Megoldásunk egyszerű felépítésű, nagy rugalmassággal - a feszültségszintek és a GPIO-k konfigurálhatók.*
 
 Kompatibilis termékek:
 - [qUPS-P-SC](https://www.aqex.hu/qups-p-sc-raspberry-pi-ups-hat-with-supercapacitor.html)
-- [qUPS-P-BC](https://www.aqex.hu/qups-p-bc-raspberry-pi-ups-hat-with-battery.html)*
+- [qUPS-P-BC](https://www.aqex.hu/qups-p-bc-raspberry-pi-ups-hat-with-battery.html)
 
 ## 3. Installation / *Telepítés*
 
