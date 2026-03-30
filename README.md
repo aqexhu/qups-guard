@@ -31,8 +31,17 @@ First of all, we would like to express our deeply honest greeting to all of you,
 The qUPS uninterruptible power supply was created, because the mission critical endpoints need protection against black- or brownouts and during longer power-cuts, syncing/last communication/safe shutdown must be initiated before everything gets dark.
 Our solution is simple in design with high flexibility - voltage levels and GPIOs are configurable.
 
+Compatible products: 
+- [qUPS-P-SC](https://www.aqex.eu/qups-p-sc-raspberry-pi-ups-hat-with-supercapacitor.html)
+- [qUPS-P-BC](https://www.aqex.eu/qups-p-bc-raspberry-pi-ups-hat-with-battery.html)
+
 *A qUPS szünetmentes tápegységet azért hoztuk létre, mert a kritikus fontosságú végpontoknak védelemre van szükségük az áramkimaradások vagy áramszünetek ellen, és hosszabb áramkimaradások esetén a szinkronizálást/utolsó kommunikációt/biztonságos leállást el kell indítani, mielőtt minden elsötétül.
-Megoldásunk egyszerű felépítésű, nagy rugalmassággal - a feszültségszintek és a GPIO-k konfigurálhatók.*
+Megoldásunk egyszerű felépítésű, nagy rugalmassággal - a feszültségszintek és a GPIO-k konfigurálhatók.
+
+Kompatibilis termékek:
+- [qUPS-P-SC](https://www.aqex.hu/qups-p-sc-raspberry-pi-ups-hat-with-supercapacitor.html)
+- [qUPS-P-BC](https://www.aqex.hu/qups-p-bc-raspberry-pi-ups-hat-with-battery.html)
+*
 
 ## 3. Installation / *Telepítés*
 
