@@ -40,8 +40,7 @@ Megoldásunk egyszerű felépítésű, nagy rugalmassággal - a feszültségszin
 
 Kompatibilis termékek:
 - [qUPS-P-SC](https://www.aqex.hu/qups-p-sc-raspberry-pi-ups-hat-with-supercapacitor.html)
-- [qUPS-P-BC](https://www.aqex.hu/qups-p-bc-raspberry-pi-ups-hat-with-battery.html)
-*
+- [qUPS-P-BC](https://www.aqex.hu/qups-p-bc-raspberry-pi-ups-hat-with-battery.html)*
 
 ## 3. Installation / *Telepítés*
 
