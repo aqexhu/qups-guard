@@ -8,10 +8,10 @@
   },
   "mqtt": {
     "enabled": true,
-    "broker": "192.168.199.181",
+    "broker": "_PUT_IP_OF_MQTT_SERVER_HERE_",
     "port": 1883,
-    "username": "john",
-    "password": "john",
+    "username": "_USERNAME_OF_MQTT_",
+    "password": "_PASSWORD_OF_MQTT_",
     "node_id": "qups_guard",
     "state_topic": "qups/state",
     "discovery_prefix": "homeassistant"
