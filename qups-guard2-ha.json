@@ -1,0 +1,19 @@
+{
+  "gpio": {
+    "dip": "01",
+    "chip_path": "/dev/gpiochip0"
+  },
+  "ups": {
+    "shutdown_delay": 5
+  },
+  "mqtt": {
+    "enabled": true,
+    "broker": "192.168.199.181",
+    "port": 1883,
+    "username": "john",
+    "password": "john",
+    "node_id": "qups_guard",
+    "state_topic": "qups/state",
+    "discovery_prefix": "homeassistant"
+  }
+}

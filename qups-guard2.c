@@ -30,6 +30,10 @@ struct gpiod_edge_event_buffer *evbuf = NULL;
 uint8_t shutdown_delay = 0;
 static uint8_t shutdown_pulse = 0;
 
+// State variable holding the suppression status of LOW UPS messages
+// 0 = Active/Ready to log; 1 = Suppressed (already logged)
+static uint8_t low_ups_suppressed = 0;
+
 struct DIPsw
 {
     const char *DIP;
@@ -107,12 +111,21 @@ void *g_callback(void *args)
                     if (et == GPIOD_EDGE_EVENT_FALLING_EDGE)
                     {
                         if (lastval_pfo != gpiod_line_request_get_value(in_request, DIP_sw.pfo_n))
+                        {
+                            printf("UPS line power NOK!\n");
                             syslog(LOG_INFO, "UPS line power NOK!");
+                        }
                     }
                     else if (et == GPIOD_EDGE_EVENT_RISING_EDGE)
                     {
                         if (lastval_pfo != gpiod_line_request_get_value(in_request, DIP_sw.pfo_n))
+                        {
+                            printf("UPS line power OK.\n");
                             syslog(LOG_INFO, "UPS line power OK.");
+                            
+                            // Power restored: reset suppression state to allow logging on next outage
+                            low_ups_suppressed = 0; 
+                        }
                     }
                     lastval_pfo = (uint8_t)gpiod_line_request_get_value(in_request, DIP_sw.pfo_n);
                 }
@@ -122,7 +135,21 @@ void *g_callback(void *args)
                     {
                         shutdown_pulse = 1;
                         clock_gettime(CLOCK_MONOTONIC, &start_time);
-                        syslog(LOG_INFO, "UPS energy level LOW.");
+                        
+                        // Only log and print if power is down AND suppression hasn't locked repeat logs
+                        if (lastval_pfo == 0)
+                        {
+                            if (low_ups_suppressed == 0)
+                            {
+                                printf("LOW UPS level detected!\n");
+                                syslog(LOG_INFO, "LOW UPS level detected! UPS energy level LOW.");
+                                low_ups_suppressed = 1; // Suppress subsequent bounces
+                            }
+                        }
+                        else
+                        {
+                            syslog(LOG_INFO, "UPS energy level LOW.");
+                        }
                     }
                     else if (et == GPIOD_EDGE_EVENT_RISING_EDGE)
                     {
@@ -217,6 +244,14 @@ int g_gpioinit()
         syslog(LOG_INFO, "UPS energy level LOW.");
     else
         syslog(LOG_INFO, "UPS energy level HIGH.");
+
+    // Handle initial state if booted into a power failure + low energy state
+    if (lastval_pfo == 0 && lastval_lim == 0)
+    {
+        printf("LOW UPS level detected!\n");
+        syslog(LOG_INFO, "LOW UPS level detected! UPS energy level LOW.");
+        low_ups_suppressed = 1;
+    }
 
     return 0;
 }
