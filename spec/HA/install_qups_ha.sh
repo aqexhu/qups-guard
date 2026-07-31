@@ -97,6 +97,24 @@ if [[ "$INSTALL_HA" =~ ^[Yy]$ ]]; then
         docker rm -f homeassistant
     fi
 
+	# Create config directory if it doesn't exist yet
+	mkdir -p "$USER_HOME/homeassistant/config"
+
+	# Inject MQTT connection defaults into HA configuration.yaml
+	cat <<EOF >> "$USER_HOME/homeassistant/config/configuration.yaml"
+
+	mqtt:
+	  broker: "$MQTT_BROKER"
+	  port: 1883
+	  username: "$MQTT_USER"
+	  password: "$MQTT_PASS"
+	  discovery: true
+	  discovery_prefix: "homeassistant"
+	EOF
+
+	chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/homeassistant"
+
+
     docker run -d \
       --name homeassistant \
       --privileged \
