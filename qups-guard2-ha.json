@@ -4,11 +4,11 @@
     "chip_path": "/dev/gpiochip0"
   },
   "ups": {
-    "shutdown_delay": 5
+    "shutdown_delay": 10
   },
   "mqtt": {
     "enabled": true,
-    "broker": "localhost",
+    "broker": "127.0.0.1",
     "port": 1883,
     "username": "john",
     "password": "john",
