@@ -295,6 +295,7 @@ void mqtt_init(void)
 // ==========================================
 void *g_shdcallback(void *args)
 {
+    (void)args;
     while (true)
     {
         if (shutdown_pulse)
@@ -324,6 +325,7 @@ void *g_shdcallback(void *args)
 
 void *g_callback(void *args)
 {
+    (void)args;
     const int buf_capacity = 64;
     evbuf = gpiod_edge_event_buffer_new(buf_capacity);
     int64_t timeout_ns = (int64_t)ts.tv_sec * 1000000000LL + ts.tv_nsec;
