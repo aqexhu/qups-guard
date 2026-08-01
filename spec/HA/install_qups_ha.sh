@@ -49,8 +49,8 @@ if [ -z "$MQTT_PASS" ]; then
     exit 1
 fi
 
-read -p "[ACTION REQUIRED] Enter DIP switch code [10]: " DIP_CODE
-DIP_CODE=${DIP_CODE:-10}
+read -p "[ACTION REQUIRED] Enter DIP switch code [01]: " DIP_CODE
+DIP_CODE=${DIP_CODE:-01}
 
 apt update
 if [[ "$RUN_UPGRADE" =~ ^[Yy]$ ]]; then
@@ -96,24 +96,6 @@ if [[ "$INSTALL_HA" =~ ^[Yy]$ ]]; then
     if [ "$(docker ps -aq -f name=homeassistant)" ]; then
         docker rm -f homeassistant
     fi
-
-	# Create config directory if it doesn't exist yet
-	mkdir -p "$USER_HOME/homeassistant/config"
-
-	# Inject MQTT connection defaults into HA configuration.yaml
-	cat <<EOF >> "$USER_HOME/homeassistant/config/configuration.yaml"
-
-	mqtt:
-	  broker: "$MQTT_BROKER"
-	  port: 1883
-	  username: "$MQTT_USER"
-	  password: "$MQTT_PASS"
-	  discovery: true
-	  discovery_prefix: "homeassistant"
-	EOF
-
-	chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/homeassistant"
-
 
     docker run -d \
       --name homeassistant \
