@@ -244,7 +244,7 @@ void publish_ha_discovery(void)
     // Battery Low Sensor
     snprintf(topic, sizeof(topic), "%s/binary_sensor/%s/battery_low/config", discovery_prefix, node_id);
     snprintf(payload, sizeof(payload),
-             "{\"name\":\"qUPS Energy Low\","
+             "{\"name\":\"qUPS Energy level\","
               "\"unique_id\":\"%s_battery_low\","
               "\"state_topic\":\"%s\","
               "\"value_template\":\"{{ value_json.battery_low }}\","
