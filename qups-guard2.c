@@ -58,6 +58,7 @@ double diffcltime(struct timespec a, struct timespec b)
 
 void *g_shdcallback(void *args)
 {
+    (void)args;
     while (true)
     {
         if (shutdown_pulse)
@@ -85,6 +86,7 @@ void *g_shdcallback(void *args)
 
 void *g_callback(void *args)
 {
+    (void)args;
     /* Use libgpiod v2 line request / edge-event buffer API */
     const int buf_capacity = 64;
     evbuf = gpiod_edge_event_buffer_new(buf_capacity);
@@ -298,21 +300,24 @@ int main(int argc, char **argv)
         {
             if (i + 1 < (unsigned int)argc)
             {
-                unsigned int dip_len;
-                dip_len = strlen(argv[i + 1]);
-                if (dip_len == 3 || dip_len == 2)
-                {
-                    strncpy(dip_sw, argv[i + 1], dip_len);
-                    dip_sw[dip_len] = '\0';
-                    for (unsigned int j = 0; j < 10; j++)
-                    {
-                        if (!strcmp(dip_sw, DIPswa[j].DIP))
-                        {
-                            DIP_sw = DIPswa[j];
-                            mat = true;
-                        }
-                    }
-                }
+		const char *arg_dip = argv[i + 1];
+		size_t dip_len = strlen(arg_dip);
+
+		if (dip_len == 2 || dip_len == 3)
+		{
+		    size_t num_dips = sizeof(DIPswa) / sizeof(DIPswa[0]);
+		    for (size_t j = 0; j < num_dips; j++)
+		    {
+		        if (strcmp(arg_dip, DIPswa[j].DIP) == 0)
+		        {
+		            DIP_sw = DIPswa[j];
+		            strncpy(dip_sw, arg_dip, sizeof(dip_sw) - 1);
+		            dip_sw[sizeof(dip_sw) - 1] = '\0';
+		            mat = true;
+		            break; // Stop searching once matched
+		        }
+		    }
+		}
                 i++;
             }
             else
