@@ -1,0 +1,13 @@
+[Unit]
+Description=qUPS Guard HA Daemon
+After=network.target mosquitto.service
+
+[Service]
+Type=simple
+ExecStart=/home/john/Documents/qups-guard/qups-guard2-ha --config /home/john/Documents/qups-guard/qups-guard2-ha.json
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
