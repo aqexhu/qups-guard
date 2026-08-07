@@ -29,6 +29,7 @@ struct gpiod_edge_event_buffer *evbuf = NULL;
 #define SHUTDOWN_DELAY 0
 uint8_t shutdown_delay = 0;
 static uint8_t shutdown_pulse = 0;
+static bool shutdown_enabled = true;
 
 // State variable holding the suppression status of LOW UPS messages
 // 0 = Active/Ready to log; 1 = Suppressed (already logged)
@@ -73,9 +74,16 @@ void *g_shdcallback(void *args)
                 sleep(shutdown_delay);
                 syslog(LOG_INFO, "Shutdown with delay %d - expired, shutting down.", shutdown_delay);
 
-                if (system("sudo shutdown -h now") == 0)
+                if (shutdown_enabled)
                 {
-                    syslog(LOG_INFO, "Shutdown sequence succesfully initiated.");
+                    if (system("sudo shutdown -h now") == 0)
+                    {
+                        syslog(LOG_INFO, "Shutdown sequence succesfully initiated.");
+                    }
+                }
+                else
+                {
+                    syslog(LOG_INFO, "Shutdown sequence disabled by --noshutdown flag.");
                 }
             }
         }
@@ -295,6 +303,10 @@ int main(int argc, char **argv)
                 fprintf(stderr, "Error: --shutdown-delay requires an argument - using default %d.\n", SHUTDOWN_DELAY);
                 shutdown_delay = SHUTDOWN_DELAY;
             }
+        }
+        else if (strcmp(argv[i], "--noshutdown") == 0)
+        {
+            shutdown_enabled = false;
         }
         else if (strcmp(argv[i], "--dip") == 0)
         {
