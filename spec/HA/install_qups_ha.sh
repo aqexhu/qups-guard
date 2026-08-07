@@ -29,7 +29,43 @@ read -p "[ACTION REQUIRED] Install Home Assistant Container? [Y/n]: " INSTALL_HA
 INSTALL_HA=${INSTALL_HA:-Y}
 
 DEFAULT_REPO="https://github.com/aqexhu/qups-guard.git"
-read -p "[ACTION REQUIRED] Enter local path to qups-guard (leave blank to clone $DEFAULT_REPO): " LOCAL_QUPS_PATH
+echo "[ACTION REQUIRED] Choose repository handling:"
+echo "  1) Clone the repository to the working directory (default)"
+echo "  2) Clone the repository to another directory"
+echo "  3) Use an already cloned repository from the working directory"
+echo "  4) Use an already cloned repository from a custom path"
+read -p "Enter 1, 2, 3, or 4 [1]: " REPO_MODE
+REPO_MODE=${REPO_MODE:-1}
+
+QUPS_DIR="$USER_HOME/qups-guard"
+LOCAL_QUPS_PATH=""
+
+case "$REPO_MODE" in
+    2)
+        read -p "[ACTION REQUIRED] Enter destination directory for clone: " QUPS_TARGET_DIR
+        if [ -z "$QUPS_TARGET_DIR" ]; then
+            QUPS_DIR="$USER_HOME/qups-guard"
+        elif [[ "$QUPS_TARGET_DIR" = /* ]]; then
+            QUPS_DIR="$QUPS_TARGET_DIR"
+        else
+            QUPS_DIR="$USER_HOME/$QUPS_TARGET_DIR"
+        fi
+        ;;
+    3)
+        QUPS_DIR="$USER_HOME/qups-guard"
+        ;;
+    4)
+        read -p "[ACTION REQUIRED] Enter path to an already cloned qups-guard repository: " LOCAL_QUPS_PATH
+        if [[ "$LOCAL_QUPS_PATH" = /* ]]; then
+            QUPS_DIR="$LOCAL_QUPS_PATH"
+        else
+            QUPS_DIR="$USER_HOME/$LOCAL_QUPS_PATH"
+        fi
+        ;;
+    *)
+        QUPS_DIR="$USER_HOME/qups-guard"
+        ;;
+esac
 
 if [[ "$INSTALL_HA" =~ ^[Yy]$ ]]; then
     read -p "[ACTION REQUIRED] Enter Timezone [Europe/Budapest]: " TIMEZONE
@@ -108,23 +144,28 @@ if [[ "$INSTALL_HA" =~ ^[Yy]$ ]]; then
 fi
 
 # qups-guard2-ha Setup
-QUPS_DIR="$USER_HOME/qups-guard"
-
-if [ -z "$LOCAL_QUPS_PATH" ]; then
-    mkdir -p "$QUPS_DIR"
-    git clone "$DEFAULT_REPO" "$QUPS_DIR"
-else
-    if [ -f "$LOCAL_QUPS_PATH" ]; then
-        mkdir -p "$QUPS_DIR"
-        cp "$LOCAL_QUPS_PATH" "$QUPS_DIR/qups-guard2-ha.c"
-    elif [ -d "$LOCAL_QUPS_PATH" ]; then
-        mkdir -p "$QUPS_DIR"
-        cp -r "$LOCAL_QUPS_PATH"/* "$QUPS_DIR/"
-    else
-        echo "Error: Path $LOCAL_QUPS_PATH does not exist."
-        exit 1
-    fi
-fi
+case "$REPO_MODE" in
+    1|2)
+        mkdir -p "$(dirname "$QUPS_DIR")"
+        if [ -d "$QUPS_DIR/.git" ]; then
+            git -C "$QUPS_DIR" pull --ff-only
+        else
+            git clone "$DEFAULT_REPO" "$QUPS_DIR"
+        fi
+        ;;
+    3)
+        if [ ! -d "$QUPS_DIR" ]; then
+            echo "Error: Working directory repository not found at $QUPS_DIR."
+            exit 1
+        fi
+        ;;
+    4)
+        if [ ! -d "$QUPS_DIR" ]; then
+            echo "Error: Repository path $QUPS_DIR does not exist."
+            exit 1
+        fi
+        ;;
+esac
 
 if [ ! -f "$QUPS_DIR/qups-guard2-ha.c" ]; then
     echo "Error: qups-guard2-ha.c not found in $QUPS_DIR."
